@@ -53,48 +53,44 @@ if __name__ == "__main__":
             args.protocol = ['tcp','tls','socks']
 
     for dir in [ os.path.join(args.peer_directory, x) for x in ['asia', 'europe', 'north-america', 'other', 'south-america'] ]:
-        try:
-            for file in os.listdir(dir):
-                if args.blacklist is not None and file.split('.')[0].lower() in [ x.split('.')[0].lower() for x in args.blacklist ]:
-                    continue
-                if args.whitelist is not None and file.split('.')[0].lower() not in [ x.split('.')[0].lower() for x in args.whitelist ]:
-                    continue
+        for file in os.listdir(dir):
+            if args.blacklist is not None and file.split('.')[0].lower() in [ x.split('.')[0].lower() for x in args.blacklist ]:
+                continue
+            if args.whitelist is not None and file.split('.')[0].lower() not in [ x.split('.')[0].lower() for x in args.whitelist ]:
+                continue
 
-                try:
-                    if file.split('.')[-1] == 'md' and os.path.isfile(os.path.join(dir, file)):
-                        with open(os.path.join(dir, file), 'r') as f:
-                            for line in f:
-                                for match in re.findall(r'\*\s*`(.*?)`', line):
-                                    proto = match.split(':')[0]
-                                    if proto not in args.protocol: continue
+            try:
+                if file.split('.')[-1] == 'md' and os.path.isfile(os.path.join(dir, file)):
+                    with open(os.path.join(dir, file), 'r') as f:
+                        for line in f:
+                            for match in re.findall(r'\*\s*`(.*?)`', line):
+                                proto = match.split(':')[0]
+                                if proto not in args.protocol: continue
 
-                                    if args.ipv4 or args.ipv6 or args.dns:
-                                        host = match.split('/')[2]
+                                if args.ipv4 or args.ipv6 or args.dns:
+                                    host = match.split('/')[2]
 
-                                        try:
-                                            if args.ipv4 and is_ipv4(host.split(':')[0]):
-                                                    print(match)
-                                                    continue
-                                        except:
-                                            pass
+                                    try:
+                                        if args.ipv4 and is_ipv4(host.split(':')[0]):
+                                                print(match)
+                                                continue
+                                    except:
+                                        pass
 
-                                        try:
-                                            if args.ipv6 and is_ipv6(host.split('[')[1].split(']')[0]):
-                                                    print(match)
-                                                    continue
-                                        except:
-                                            pass
+                                    try:
+                                        if args.ipv6 and is_ipv6(host.split('[')[1].split(']')[0]):
+                                                print(match)
+                                                continue
+                                    except:
+                                        pass
 
-                                        try:
-                                            if args.dns and is_domain(host.split(':')[0]):
-                                                    print(match)
-                                                    continue
-                                        except:
-                                            pass
-                                    else:
-                                        print(match)
-                except:
-                    pass
-        except FileNotFoundError:
-            print ("You must run this script at the root of the public-peers repo.")
-            raise SystemExit(1)
+                                    try:
+                                        if args.dns and is_domain(host.split(':')[0]):
+                                                print(match)
+                                                continue
+                                    except:
+                                        pass
+                                else:
+                                    print(match)
+            except:
+                pass
