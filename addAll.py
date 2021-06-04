@@ -36,7 +36,7 @@ if __name__ == "__main__":
     group.add_argument('-w', '--whitelist', help='whitelists peer file (delimited by space)')
     parser.add_argument('-d', '--peer-directory',
         default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'public-peers'),
-        help='peer directory (default pwd)'
+        help='peer directory (default script location + public-peers)'
     )
     parser.add_argument('-p', '--protocol', help='only show specified protocol (delimited by space) (default tcp, tls for -46a and all for everything else)')
     parser.add_argument('-4', '--ipv4', help='only show ipv4 peers', action='store_true')
