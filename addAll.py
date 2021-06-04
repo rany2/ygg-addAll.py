@@ -51,14 +51,14 @@ if __name__ == "__main__":
 
     for dir in [ os.path.join(args.peer_directory, x) for x in ['asia', 'europe', 'north-america', 'other', 'south-america'] ]:
         try:
-            for file in [ x for x in os.listdir(dir) if os.path.isfile(os.path.join(dir, x))]:
+            for file in os.listdir(dir):
                 if args.blacklist is not None and file.split('.')[0].lower() in [ x.split('.')[0].lower() for x in args.blacklist ]:
                     continue
                 if args.whitelist is not None and file.split('.')[0].lower() not in [ x.split('.')[0].lower() for x in args.whitelist ]:
                     continue
 
                 try:
-                    if file.split('.')[-1] == 'md':
+                    if file.split('.')[-1] == 'md' and os.path.isfile(os.path.join(dir, file)):
                         with open(os.path.join(dir, file), 'r') as f:
                             for line in f:
                                 for match in re.findall(r'\*\s*`(.*?)`', line):
