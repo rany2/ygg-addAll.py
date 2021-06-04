@@ -34,7 +34,10 @@ if __name__ == "__main__":
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-b', '--blacklist', help='blacklists peer file (delimited by space)')
     group.add_argument('-w', '--whitelist', help='whitelists peer file (delimited by space)')
-    parser.add_argument('-d', '--peer-directory', default='.', help='peer directory (default pwd)')
+    parser.add_argument('-d', '--peer-directory',
+        default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'public-peers'),
+        help='peer directory (default pwd)'
+    )
     parser.add_argument('-p', '--protocol', help='only show specified protocol (delimited by space) (default tcp, tls for -46a and all for everything else)')
     parser.add_argument('-4', '--ipv4', help='only show ipv4 peers', action='store_true')
     parser.add_argument('-6', '--ipv6', help='only show ipv6 peers', action='store_true')

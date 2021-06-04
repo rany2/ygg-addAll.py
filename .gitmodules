@@ -1,0 +1,3 @@
+[submodule "public-peers"]
+	path = public-peers
+	url = https://github.com/yggdrasil-network/public-peers/
