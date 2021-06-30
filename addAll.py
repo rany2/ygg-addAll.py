@@ -31,32 +31,57 @@ def is_domain(value):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Yggdrasil Public Peer Compiler")
+
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-b', '--blacklist', help='blacklists peer file (delimited by space)')
     group.add_argument('-w', '--whitelist', help='whitelists peer file (delimited by space)')
-    parser.add_argument('-d', '--peer-directory',
-        default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'public-peers'),
-        help='peer directory (default script location + public-peers)'
+
+    parser.add_argument(
+        '-d',
+        '--peer-directory',
+        default='.',
+        help='peer directory (default pwd)'
     )
-    parser.add_argument('-p', '--protocol', help='only show specified protocol (delimited by space) (default tcp, tls for -46a and all for everything else)')
+
+    parser.add_argument(
+        '-p',
+        '--protocol',
+        help='only show specified protocol (delimited by space) (default tcp, tls for -46a and all for everything else)'
+    )
+
     parser.add_argument('-4', '--ipv4', help='only show ipv4 peers', action='store_true')
     parser.add_argument('-6', '--ipv6', help='only show ipv6 peers', action='store_true')
     parser.add_argument('-a', '--dns', help='only show dns peers', action='store_true')
+
     args = parser.parse_args()
-    if args.blacklist is not None: args.blacklist = args.blacklist.split(' ')
-    if args.whitelist is not None: args.whitelist = args.whitelist.split(' ')
-    if args.protocol is not None: args.protocol = args.protocol.split(' ')
+
+    if args.blacklist is not None:
+        args.blacklist = args.blacklist.split(' ')
+        args.blacklist = [ i.split('.')[0].lower() for i in args.blacklist ]
+
+    if args.whitelist is not None:
+        args.whitelist = args.whitelist.split(' ')
+        args.whitelist = [ i.split('.')[0].lower() for i in args.whitelist ]
+
+    if args.protocol is not None:
+        args.protocol = args.protocol.split(' ')
     else:
         if args.ipv4 or args.ipv6 or args.dns:
             args.protocol = ['tcp','tls']
         else:
             args.protocol = ['tcp','tls','socks']
 
-    for dir in [ os.path.join(args.peer_directory, x) for x in ['asia', 'europe', 'north-america', 'other', 'south-america'] ]:
+    for dir in [
+        os.path.join(args.peer_directory, i)
+        for i in os.listdir(args.peer_directory)
+        if os.path.isdir(os.path.join(args.peer_directory, i)) and i not in ['.git']
+    ]:
         for file in os.listdir(dir):
-            if args.blacklist is not None and file.split('.')[0].lower() in [ x.split('.')[0].lower() for x in args.blacklist ]:
+            file_no_ext = file.split('.')[0].lower()
+
+            if args.blacklist is not None and file_no_ext in args.blacklist:
                 continue
-            if args.whitelist is not None and file.split('.')[0].lower() not in [ x.split('.')[0].lower() for x in args.whitelist ]:
+            if args.whitelist is not None and file_no_ext not in args.whitelist:
                 continue
 
             try:
@@ -65,32 +90,33 @@ if __name__ == "__main__":
                         for line in f:
                             for match in re.findall(r'\*\s*`(.*?)`', line):
                                 proto = match.split(':')[0]
-                                if proto not in args.protocol: continue
+                                if proto not in args.protocol:
+                                    continue
 
                                 if args.ipv4 or args.ipv6 or args.dns:
                                     host = match.split('/')[2]
 
                                     try:
                                         if args.ipv4 and is_ipv4(host.split(':')[0]):
-                                                print(match)
-                                                continue
+                                            print(match, flush=True)
+                                            continue
                                     except:
                                         pass
 
                                     try:
                                         if args.ipv6 and is_ipv6(host.split('[')[1].split(']')[0]):
-                                                print(match)
-                                                continue
+                                            print(match, flush=True)
+                                            continue
                                     except:
                                         pass
 
                                     try:
                                         if args.dns and is_domain(host.split(':')[0]):
-                                                print(match)
-                                                continue
+                                            print(match, flush=True)
+                                            continue
                                     except:
                                         pass
                                 else:
-                                    print(match)
+                                    print(match, flush=True)
             except:
                 pass
