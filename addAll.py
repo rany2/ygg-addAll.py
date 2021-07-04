@@ -175,7 +175,6 @@ if __name__ == "__main__":
     if args.ping:
         while threading.active_count() > 1:
             time.sleep(0.01)
-        total_length = []
         for length in sorted(results.keys(), key=lambda x: len(x), reverse=True):
             # Don't count dead peers for max length
             if results[length] != float('inf'):
