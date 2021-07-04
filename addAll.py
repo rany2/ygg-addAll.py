@@ -2,6 +2,7 @@
 
 import os
 import re
+import time
 import socket
 import argparse
 
@@ -29,6 +30,28 @@ def is_domain(value):
         , value.encode('idna').decode('ascii')
     )
 
+def ping(address, port):
+    try:
+        if is_ipv4(address):
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        elif is_ipv6(address):
+            s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        elif is_domain(address):
+            try:
+                address = socket.getaddrinfo(address, None, socket.AF_INET6)[0][4][0]
+                s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            except socket.gaierror:
+                address = socket.gethostbyname(address)
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout (0.5) # who wants a peer worse than 0.5 sec?
+        start = time.perf_counter()
+        s.connect((address, port))
+        result = (time.perf_counter() - start) * 1000
+        s.close()
+        return result
+    except:
+        return float('inf')
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Yggdrasil Public Peer Compiler")
 
@@ -49,6 +72,8 @@ if __name__ == "__main__":
         help='only show specified protocol (delimited by space) (default tcp, tls for -46a and all for everything else)'
     )
 
+    parser.add_argument('--ping', help='ping all address', action='store_true')
+
     parser.add_argument('-4', '--ipv4', help='only show ipv4 peers', action='store_true')
     parser.add_argument('-6', '--ipv6', help='only show ipv6 peers', action='store_true')
     parser.add_argument('-a', '--dns', help='only show dns peers', action='store_true')
@@ -66,10 +91,17 @@ if __name__ == "__main__":
     if args.protocol is not None:
         args.protocol = args.protocol.split(' ')
     else:
-        if args.ipv4 or args.ipv6 or args.dns:
+        if args.ipv4 or args.ipv6 or args.dns or args.ping:
             args.protocol = ['tcp','tls']
         else:
             args.protocol = ['tcp','tls','socks']
+
+    if args.ping:
+        results = {}
+        if not args.ipv4 and not args.ipv6 and not args.dns:
+            args.ipv4 = True
+            args.ipv6 = True
+            args.dns = True
 
     for dir in [
         os.path.join(args.peer_directory, i)
@@ -98,21 +130,36 @@ if __name__ == "__main__":
 
                                     try:
                                         if args.ipv4 and is_ipv4(host.split(':')[0]):
-                                            print(match, flush=True)
+                                            if not args.ping:
+                                                print(match, flush=True)
+                                            else:
+                                                results.update({
+                                                    match: ping(host.split(':')[0], int(host.split(':')[1].split('?')[0]))
+                                                })
                                             continue
                                     except:
                                         pass
 
                                     try:
                                         if args.ipv6 and is_ipv6(host.split('[')[1].split(']')[0]):
-                                            print(match, flush=True)
+                                            if not args.ping:
+                                                print(match, flush=True)
+                                            else:
+                                                results.update({
+                                                    match: ping(host.split('[')[1].split(']')[0], int(host.split(']')[1].split(':')[1].split('?')[0]))
+                                                })
                                             continue
                                     except:
                                         pass
 
                                     try:
                                         if args.dns and is_domain(host.split(':')[0]):
-                                            print(match, flush=True)
+                                            if not args.ping:
+                                                print(match, flush=True)
+                                            else:
+                                                results.update({
+                                                    match: ping(host.split(':')[0], int(host.split(':')[1].split('?')[0]))
+                                                })
                                             continue
                                     except:
                                         pass
@@ -120,3 +167,15 @@ if __name__ == "__main__":
                                     print(match, flush=True)
             except:
                 pass
+
+    if args.ping:
+        total_length = []
+        for length in sorted(results.keys(), key=lambda x: len(x)):
+            total_length += [ len(length) ]
+        max_length = max(total_length) + 4
+        column_one = "Peer"
+        print ("%s%s%s" % (column_one, " " * (max_length - len(column_one)), "Ping result"))
+        for result in sorted(results.items(), key=lambda x: x[1]):
+            # Don't show dead peers
+            if result[1] != float('inf'):
+                print ("%s%s%.03f ms" % (result[0], " " * (max_length - len(result[0])), result[1]))
