@@ -170,9 +170,11 @@ if __name__ == "__main__":
 
     if args.ping:
         total_length = []
-        for length in sorted(results.keys(), key=lambda x: len(x)):
-            total_length += [ len(length) ]
-        max_length = max(total_length) + 4
+        for length in sorted(results.keys(), key=lambda x: len(x), reverse=True):
+            # Don't count dead peers for max length
+            if results[length] != float('inf'):
+                max_length = len(length) + 4
+                break
         column_one = "Peer"
         print ("%s%s%s" % (column_one, " " * (max_length - len(column_one)), "Ping result"))
         for result in sorted(results.items(), key=lambda x: x[1]):
