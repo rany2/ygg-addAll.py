@@ -5,6 +5,7 @@ import re
 import time
 import socket
 import argparse
+import threading
 
 def is_ipv4(value):
     try:
@@ -30,7 +31,7 @@ def is_domain(value):
         , value.encode('idna').decode('ascii')
     )
 
-def ping(address, port):
+def ping(address, port, match, results):
     try:
         if is_ipv4(address):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -48,9 +49,9 @@ def ping(address, port):
         s.connect((address, port))
         result = (time.perf_counter() - start) * 1000
         s.close()
-        return result
+        return results.update({match: result})
     except:
-        return float('inf')
+        return results.update({match: float('inf')})
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Yggdrasil Public Peer Compiler")
@@ -133,9 +134,10 @@ if __name__ == "__main__":
                                             if not args.ping:
                                                 print(match, flush=True)
                                             else:
-                                                results.update({
-                                                    match: ping(host.split(':')[0], int(host.split(':')[1].split('?')[0]))
-                                                })
+                                                threading.Thread(
+                                                    target=ping,
+                                                    args=(host.split(':')[0], int(host.split(':')[1].split('?')[0]), match, results)
+                                                ).start()
                                             continue
                                     except:
                                         pass
@@ -145,9 +147,10 @@ if __name__ == "__main__":
                                             if not args.ping:
                                                 print(match, flush=True)
                                             else:
-                                                results.update({
-                                                    match: ping(host.split('[')[1].split(']')[0], int(host.split(']')[1].split(':')[1].split('?')[0]))
-                                                })
+                                                threading.Thread(
+                                                    target=ping,
+                                                    args=(host.split('[')[1].split(']')[0], int(host.split(']')[1].split(':')[1].split('?')[0]), match, results)
+                                                ).start()
                                             continue
                                     except:
                                         pass
@@ -157,9 +160,10 @@ if __name__ == "__main__":
                                             if not args.ping:
                                                 print(match, flush=True)
                                             else:
-                                                results.update({
-                                                    match: ping(host.split(':')[0], int(host.split(':')[1].split('?')[0]))
-                                                })
+                                                threading.Thread(
+                                                    target=ping,
+                                                    args=(host.split(':')[0], int(host.split(':')[1].split('?')[0]), match, results)
+                                                ).start()
                                             continue
                                     except:
                                         pass
@@ -169,6 +173,8 @@ if __name__ == "__main__":
                 pass
 
     if args.ping:
+        while threading.active_count() > 1:
+            time.sleep(0.01)
         total_length = []
         for length in sorted(results.keys(), key=lambda x: len(x), reverse=True):
             # Don't count dead peers for max length
